@@ -65,6 +65,8 @@ class DigitalOutChannelControllerImpl(DigitalOutChannelControllerBase):
     def State_on_subscription(self, *, metadata: Dict[FullyQualifiedIdentifier, Any]) -> Optional[Queue[State]]:
         channel_index: int = metadata.pop(self.__channel_index_identifier)
         try:
+            if channel_index < 0:
+                raise IndexError
             return self.__state_queues[channel_index]
         except IndexError:
             raise InvalidChannelIndex(

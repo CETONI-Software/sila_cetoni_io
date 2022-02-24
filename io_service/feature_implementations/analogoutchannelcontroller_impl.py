@@ -63,6 +63,8 @@ class AnalogOutChannelControllerImpl(AnalogOutChannelControllerBase):
     def Value_on_subscription(self, *, metadata: Dict[FullyQualifiedIdentifier, Any]) -> Optional[Queue[float]]:
         channel_index: int = metadata.pop(self.__channel_index_identifier)
         try:
+            if channel_index < 0:
+                raise IndexError
             return self.__value_queues[channel_index]
         except IndexError:
             raise InvalidChannelIndex(
