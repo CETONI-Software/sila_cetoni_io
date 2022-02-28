@@ -9,7 +9,8 @@ from typing import Any, Dict, List, Optional, Union
 from qmixsdk.qmixdigio import DigitalInChannel
 from sila2.framework import Command, Feature, FullyQualifiedIdentifier, Property
 
-from ....application.system import ApplicationSystem
+from sila_cetoni.application.system import ApplicationSystem
+
 from ..generated.digitalinchannelprovider import (
     DigitalInChannelProviderBase,
     DigitalInChannelProviderFeature,

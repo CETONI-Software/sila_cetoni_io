@@ -12,7 +12,8 @@ from qmixsdk.qmixanalogio import AnalogOutChannel
 from sila2.framework import Command, Feature, FullyQualifiedIdentifier, Property
 from sila2.framework.errors.framework_error import FrameworkError, FrameworkErrorType
 
-from ....application.system import ApplicationSystem
+from sila_cetoni.application.system import ApplicationSystem
+
 from ..generated.analogoutchannelcontroller import (
     AnalogOutChannelControllerBase,
     AnalogOutChannelControllerFeature,

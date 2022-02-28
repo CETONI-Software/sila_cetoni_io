@@ -10,7 +10,8 @@ from typing import Any, Dict, List, Optional, Union
 from qmixsdk.qmixanalogio import AnalogInChannel
 from sila2.framework import Command, Feature, FullyQualifiedIdentifier, Property
 
-from ....application.system import ApplicationSystem
+from sila_cetoni.application.system import ApplicationSystem
+
 from ..generated.analoginchannelprovider import (
     AnalogInChannelProviderBase,
     AnalogInChannelProviderFeature,
