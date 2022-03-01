@@ -20,6 +20,8 @@ from ..generated.digitaloutchannelcontroller import (
     State,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class DigitalOutChannelControllerImpl(DigitalOutChannelControllerBase):
     __system: ApplicationSystem
@@ -76,7 +78,7 @@ class DigitalOutChannelControllerImpl(DigitalOutChannelControllerBase):
 
     def SetOutput(self, State: State, *, metadata: Dict[FullyQualifiedIdentifier, Any]) -> SetOutput_Responses:
         channel_index: int = metadata.pop(self.__channel_index_identifier)
-        logging.debug(f"channel id: {channel_index}")
+        logger.debug(f"channel id: {channel_index}")
         try:
             self.__channels[channel_index].write_on(State == "On")
         except IndexError:

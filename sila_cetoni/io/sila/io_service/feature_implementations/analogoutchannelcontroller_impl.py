@@ -21,6 +21,8 @@ from ..generated.analogoutchannelcontroller import (
     SetOutputValue_Responses,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class AnalogOutChannelControllerImpl(AnalogOutChannelControllerBase):
     __system: ApplicationSystem
@@ -76,7 +78,7 @@ class AnalogOutChannelControllerImpl(AnalogOutChannelControllerBase):
         self, Value: float, *, metadata: Dict[FullyQualifiedIdentifier, Any]
     ) -> SetOutputValue_Responses:
         channel_index: int = metadata.pop(self.__channel_index_identifier)
-        logging.debug(f"channel index: {channel_index}")
+        logger.debug(f"channel index: {channel_index}")
         try:
             self.__channels[channel_index].write_output(Value)
         except IndexError:
