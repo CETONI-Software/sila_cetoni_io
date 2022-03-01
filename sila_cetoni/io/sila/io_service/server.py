@@ -4,7 +4,8 @@ from uuid import UUID
 from qmixsdk.qmixanalogio import AnalogInChannel, AnalogOutChannel
 from qmixsdk.qmixdigio import DigitalInChannel, DigitalOutChannel
 
-from ...core.core_service.server import Server as CoreServer
+from sila_cetoni.core.sila.core_service.server import Server as CoreServer
+
 from .feature_implementations.analoginchannelprovider_impl import AnalogInChannelProviderImpl
 from .feature_implementations.analogoutchannelcontroller_impl import AnalogOutChannelControllerImpl
 from .feature_implementations.digitalinchannelprovider_impl import DigitalInChannelProviderImpl
