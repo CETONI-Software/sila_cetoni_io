@@ -7,5 +7,5 @@ Run `python -m sila_cetoni_io --help` to receive a full list of available option
 
 ## Code generation
 ```console
-$ python -m sila2.code_generator new-package -n io_service -o ./sila_cetoni_io/sila/ ../../features/de/cetoni/io/*.sila.xml
+$ python -m sila2.code_generator new-package -n io_service -o ./sila_cetoni/io/sila/ ./sila_cetoni/io/features*.sila.xml
 ```
