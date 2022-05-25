@@ -4,6 +4,7 @@ from uuid import UUID
 from qmixsdk.qmixanalogio import AnalogInChannel, AnalogOutChannel
 from qmixsdk.qmixdigio import DigitalInChannel, DigitalOutChannel
 
+from sila_cetoni.core.device_drivers.abc import BatteryInterface
 from sila_cetoni.core.sila.core_service.server import Server as CoreServer
 
 from .feature_implementations.analoginchannelprovider_impl import AnalogInChannelProviderImpl
@@ -20,6 +21,7 @@ class Server(CoreServer):
     def __init__(
         self,
         io_channels: List[Union[AnalogInChannel, AnalogOutChannel, DigitalInChannel, DigitalOutChannel]],
+        battery: Optional[BatteryInterface] = None,
         server_name: str = "",
         server_type: str = "",
         server_description: str = "",
@@ -28,6 +30,7 @@ class Server(CoreServer):
         server_uuid: Optional[Union[str, UUID]] = None,
     ):
         super().__init__(
+            battery,
             server_name=server_name or "I/O Service",
             server_type=server_type or "TestServer",
             server_description=server_description or "The SiLA 2 driver for CETONI I/O modules",
