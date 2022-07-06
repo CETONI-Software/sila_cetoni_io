@@ -17,7 +17,7 @@ from .generated.digitalinchannelprovider import DigitalInChannelProviderFeature
 from .generated.digitaloutchannelcontroller import DigitalOutChannelControllerFeature
 
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 
 class Server(CoreServer):
