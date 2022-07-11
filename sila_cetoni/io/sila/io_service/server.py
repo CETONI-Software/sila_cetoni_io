@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import List, Optional, Union
 from uuid import UUID
 
@@ -15,7 +17,6 @@ from .generated.analoginchannelprovider import AnalogInChannelProviderFeature
 from .generated.analogoutchannelcontroller import AnalogOutChannelControllerFeature
 from .generated.digitalinchannelprovider import DigitalInChannelProviderFeature
 from .generated.digitaloutchannelcontroller import DigitalOutChannelControllerFeature
-
 
 __version__ = "1.1.0"
 
