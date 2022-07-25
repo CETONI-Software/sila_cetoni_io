@@ -18,10 +18,14 @@ Types of changes
 
 ## Unreleased
 
+## v1.2.0
+
+Sync with sila_cetoni v1.2.0
 
 ## v1.1.0
 
 ### Changed
+
 - Bump sila2 to v0.8.2
 
 ## v1.0.0
@@ -31,6 +35,7 @@ First release of sila_cetoni
 This is the I/O plugin which adds support for controlling CETONI I/O devices via SiLA 2
 
 ### Added
+
 - AnalogInChannelProvider feature and feature implementation
 - AnalogOutChannelController feature and feature implementation
 - DigitalInChannelProvider feature and feature implementation
