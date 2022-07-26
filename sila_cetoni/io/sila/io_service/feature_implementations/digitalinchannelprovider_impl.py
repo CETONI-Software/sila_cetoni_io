@@ -80,4 +80,5 @@ class DigitalInChannelProviderImpl(DigitalInChannelProviderBase):
         return [DigitalInChannelProviderFeature["State"]]
 
     def stop(self) -> None:
+        super().stop()
         self.__stop_event.set()
