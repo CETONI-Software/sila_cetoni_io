@@ -9,12 +9,12 @@ from queue import Queue
 from threading import Event
 from typing import Any, Dict, List, Optional, Union
 
-from qmixsdk.qmixanalogio import AnalogOutChannel
 from sila2.framework import Command, Feature, FullyQualifiedIdentifier, Metadata, Property
 from sila2.framework.errors.framework_error import FrameworkError, FrameworkErrorType
 from sila2.server import MetadataDict, SilaServer
-
 from sila_cetoni.application.system import ApplicationSystem
+
+from sila_cetoni.io.device_drivers import AnalogOutChannelInterface
 
 from ..generated.analogoutchannelcontroller import (
     AnalogOutChannelControllerBase,
@@ -28,12 +28,12 @@ logger = logging.getLogger(__name__)
 
 class AnalogOutChannelControllerImpl(AnalogOutChannelControllerBase):
     __system: ApplicationSystem
-    __channels: List[AnalogOutChannel]
+    __channels: List[AnalogOutChannelInterface]
     __channel_index_metadata: FullyQualifiedIdentifier
     __value_queues: List[Queue[float]]  # same number of items and order as `__channels`
     __stop_event: Event
 
-    def __init__(self, server: SilaServer, channels: List[AnalogOutChannel], executor: Executor):
+    def __init__(self, server: SilaServer, channels: List[AnalogOutChannelInterface], executor: Executor):
         super().__init__(server)
         self.__system = ApplicationSystem()
         self.__channels = channels
@@ -45,20 +45,19 @@ class AnalogOutChannelControllerImpl(AnalogOutChannelControllerBase):
             self.__value_queues += [Queue()]
 
             # initial value
-            self.update_Value(self.__channels[i].get_output_value(), queue=self.__value_queues[i])
+            self.update_Value(self.__channels[i].value, queue=self.__value_queues[i])
 
             executor.submit(self.__make_value_updater(i), self.__stop_event)
 
     def __make_value_updater(self, i: int):
         def update_value(stop_event: Event):
-            new_value = value = self.__channels[i].get_output_value()
-            while not stop_event.is_set():
+            new_value = value = self.__channels[i].value
+            while not stop_event.wait(1):
                 if self.__system.state.is_operational():
-                    new_value = self.__channels[i].get_output_value()
+                    new_value = self.__channels[i].value
                 if not math.isclose(new_value, value):
                     value = new_value
                     self.update_Value(value, queue=self.__value_queues[i])
-                time.sleep(0.1)
 
         return update_value
 
@@ -80,7 +79,7 @@ class AnalogOutChannelControllerImpl(AnalogOutChannelControllerBase):
         channel_index: int = metadata[self.__channel_index_metadata]
         logger.debug(f"channel index: {channel_index}")
         try:
-            self.__channels[channel_index].write_output(Value)
+            self.__channels[channel_index].value = Value
         except IndexError:
             raise InvalidChannelIndex(
                 message=f"The sent channel index {channel_index} is invalid. The index must be between 0 and {len(self.__channels) - 1}.",

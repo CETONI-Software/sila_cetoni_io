@@ -1,13 +1,20 @@
 from __future__ import annotations
 
-from typing import List, Optional, Union
+from typing import TYPE_CHECKING, List, Optional, Union
 from uuid import UUID
 
-from qmixsdk.qmixanalogio import AnalogInChannel, AnalogOutChannel
-from qmixsdk.qmixdigio import DigitalInChannel, DigitalOutChannel
+if TYPE_CHECKING:
+    from sila_cetoni.core.device_drivers.abc import BatteryInterface
 
-from sila_cetoni.core.device_drivers.abc import BatteryInterface
 from sila_cetoni.core.sila.core_service.server import Server as CoreServer
+
+from sila_cetoni.io.device_drivers import (
+    AnalogInChannelInterface,
+    AnalogOutChannelInterface,
+    DigitalInChannelInterface,
+    DigitalOutChannelInterface,
+    IOChannelInterface,
+)
 
 from .feature_implementations.analoginchannelprovider_impl import AnalogInChannelProviderImpl
 from .feature_implementations.analogoutchannelcontroller_impl import AnalogOutChannelControllerImpl
@@ -24,7 +31,7 @@ __version__ = "1.7.1"
 class Server(CoreServer):
     def __init__(
         self,
-        io_channels: List[Union[AnalogInChannel, AnalogOutChannel, DigitalInChannel, DigitalOutChannel]],
+        io_channels: List[IOChannelInterface],
         battery: Optional[BatteryInterface] = None,
         server_name: str = "",
         server_type: str = "",
@@ -43,10 +50,10 @@ class Server(CoreServer):
             server_uuid=server_uuid,
         )
 
-        analog_in_channels = list(filter(lambda c: isinstance(c, AnalogInChannel), io_channels))
-        analog_out_channels = list(filter(lambda c: isinstance(c, AnalogOutChannel), io_channels))
-        digital_in_channels = list(filter(lambda c: isinstance(c, DigitalInChannel), io_channels))
-        digital_out_channels = list(filter(lambda c: isinstance(c, DigitalOutChannel), io_channels))
+        analog_in_channels = list(filter(lambda c: isinstance(c, AnalogInChannelInterface), io_channels))
+        analog_out_channels = list(filter(lambda c: isinstance(c, AnalogOutChannelInterface), io_channels))
+        digital_in_channels = list(filter(lambda c: isinstance(c, DigitalInChannelInterface), io_channels))
+        digital_out_channels = list(filter(lambda c: isinstance(c, DigitalOutChannelInterface), io_channels))
 
         if analog_in_channels:
             self.analoginchannelprovider = AnalogInChannelProviderImpl(

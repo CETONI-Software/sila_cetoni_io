@@ -8,11 +8,11 @@ from queue import Queue
 from threading import Event
 from typing import Any, Dict, List, Optional, Union
 
-from qmixsdk.qmixanalogio import AnalogInChannel
 from sila2.framework import Command, Feature, FullyQualifiedIdentifier, Metadata, Property
 from sila2.server import MetadataDict, SilaServer
-
 from sila_cetoni.application.system import ApplicationSystem
+
+from sila_cetoni.io.device_drivers import AnalogInChannelInterface
 
 from ..generated.analoginchannelprovider import (
     AnalogInChannelProviderBase,
@@ -23,12 +23,12 @@ from ..generated.analoginchannelprovider import (
 
 class AnalogInChannelProviderImpl(AnalogInChannelProviderBase):
     __system: ApplicationSystem
-    __channels: List[AnalogInChannel]
+    __channels: List[AnalogInChannelInterface]
     __channel_index_metadata: Metadata
     __value_queues: List[Queue[float]]  # same number of items and order as `__channels`
     __stop_event: Event
 
-    def __init__(self, server: SilaServer, channels: List[AnalogInChannel], executor: Executor):
+    def __init__(self, server: SilaServer, channels: List[AnalogInChannelInterface], executor: Executor):
         super().__init__(server)
         self.__system = ApplicationSystem()
         self.__channels = channels
@@ -40,20 +40,19 @@ class AnalogInChannelProviderImpl(AnalogInChannelProviderBase):
             self.__value_queues += [Queue()]
 
             # initial value
-            self.update_Value(self.__channels[i].read_input(), queue=self.__value_queues[i])
+            self.update_Value(self.__channels[i].value, queue=self.__value_queues[i])
 
             executor.submit(self.__make_value_updater(i), self.__stop_event)
 
     def __make_value_updater(self, i: int):
         def update_value(stop_event: Event):
-            new_value = value = self.__channels[i].read_input()
-            while not stop_event.is_set():
+            new_value = value = self.__channels[i].value
+            while not stop_event.wait(0.1):
                 if self.__system.state.is_operational():
-                    new_value = self.__channels[i].read_input()
+                    new_value = self.__channels[i].value
                 if not math.isclose(new_value, value):
                     value = new_value
                     self.update_Value(value, queue=self.__value_queues[i])
-                time.sleep(0.1)
 
         return update_value
 

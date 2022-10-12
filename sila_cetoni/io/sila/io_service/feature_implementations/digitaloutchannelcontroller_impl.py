@@ -8,11 +8,11 @@ from queue import Queue
 from threading import Event
 from typing import Any, Dict, List, Optional, Union
 
-from qmixsdk.qmixdigio import DigitalOutChannel
 from sila2.framework import Command, Feature, FullyQualifiedIdentifier, Metadata, Property
 from sila2.server import MetadataDict, SilaServer
-
 from sila_cetoni.application.system import ApplicationSystem
+
+from sila_cetoni.io.device_drivers import DigitalOutChannelInterface
 
 from ..generated.digitaloutchannelcontroller import (
     DigitalOutChannelControllerBase,
@@ -27,12 +27,12 @@ logger = logging.getLogger(__name__)
 
 class DigitalOutChannelControllerImpl(DigitalOutChannelControllerBase):
     __system: ApplicationSystem
-    __channels: List[DigitalOutChannel]
+    __channels: List[DigitalOutChannelInterface]
     __channel_index_metadata: Metadata
     __state_queues: List[Queue[State]]  # same number of items and order as `__channels`
     __stop_event: Event
 
-    def __init__(self, server: SilaServer, channels: List[DigitalOutChannel], executor: Executor):
+    def __init__(self, server: SilaServer, channels: List[DigitalOutChannelInterface], executor: Executor):
         super().__init__(server)
         self.__system = ApplicationSystem()
         self.__channels = channels
@@ -44,23 +44,19 @@ class DigitalOutChannelControllerImpl(DigitalOutChannelControllerBase):
             self.__state_queues += [Queue()]
 
             # initial value
-            self.update_State(
-                "On" if self.__channels[i].is_output_on() else "Off",
-                queue=self.__state_queues[i],
-            )
+            self.update_State(self.__channels[i].state, queue=self.__state_queues[i])
 
             executor.submit(self.__make_state_updater(i), self.__stop_event)
 
     def __make_state_updater(self, i: int):
         def update_state(stop_event: Event):
-            new_is_on = is_on = self.__channels[i].is_output_on()
-            while not stop_event.is_set():
+            new_state = state = self.__channels[i].state
+            while not stop_event.wait(0.1):
                 if self.__system.state.is_operational():
-                    new_is_on = self.__channels[i].is_output_on()
-                if new_is_on != is_on:
-                    is_on = new_is_on
-                    self.update_State("On" if is_on else "Off", queue=self.__state_queues[i])
-                time.sleep(0.1)
+                    new_state = self.__channels[i].state
+                if new_state != state:
+                    state = new_state
+                    self.update_State(state, queue=self.__state_queues[i])
 
         return update_state
 
@@ -82,7 +78,7 @@ class DigitalOutChannelControllerImpl(DigitalOutChannelControllerBase):
         channel_index: int = metadata[self.__channel_index_metadata]
         logger.debug(f"channel id: {channel_index}")
         try:
-            self.__channels[channel_index].write_on(State == "On")
+            self.__channels[channel_index].state = State
         except IndexError:
             raise InvalidChannelIndex(
                 message=f"The sent channel index {channel_index} is invalid. The index must be between 0 and {len(self.__channels) - 1}.",
