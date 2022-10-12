@@ -26,6 +26,7 @@ Types of changes
 ### Changed
 
 - Feature implementations use the more agnostic `IOChannelInterface` to support vendor independent I/O channels
+- Bump required sila2 version to v0.10.1
 
 ## v1.7.1
 
