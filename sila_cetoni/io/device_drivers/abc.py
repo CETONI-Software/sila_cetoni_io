@@ -39,6 +39,7 @@ class IOChannelInterface(DeviceDriverABC):
     _name: str
 
     def __init__(self, name: str) -> None:
+        super().__init__()
         self._name = name
 
     @property

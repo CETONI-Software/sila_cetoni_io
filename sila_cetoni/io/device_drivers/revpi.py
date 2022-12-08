@@ -8,7 +8,7 @@ A device driver implementation for the I/O channel modules of a Revolution Pi
 from __future__ import annotations
 
 import logging
-from typing import List
+from typing import List, Optional
 
 import revpimodio2 as rp2
 from revpimodio2 import device as rp2_device
@@ -42,34 +42,57 @@ class _RevPiIoChannelBase:
     __instances: List[Self] = []
 
     _rev_pi: rp2.RevPiModIO = None
-    _dio_modules: List[rp2_device.DioModule] = []
+    _io_modules: List[rp2_device.DioModule] = []
     _inputs: List[rp2_io.IOBase] = []
     _outputs: List[rp2_io.IOBase] = []
 
+    def __new__(cls, *args, **kwargs):
+        instance = super().__new__(cls)
+        logger.debug(f"Adding {instance} to {cls} instance list")
+        cls.__instances += [instance]
+        return instance
+
     def __init__(self) -> None:
-        _RevPiIoChannelBase.__instances += [self]
         self._init_statics()
 
-    @staticmethod
-    def _init_statics():
-        if _RevPiIoChannelBase._rev_pi is None:
-            _RevPiIoChannelBase._rev_pi = rp2.RevPiModIO(autorefresh=True, shared_procimg=True)
-            # _RevPiIoChannelBase._rev_pi.cycletime = 40  # the default 20 ms cannot be held
-            _RevPiIoChannelBase._rev_pi.mainloop(blocking=False)
+    @classmethod
+    def _init_statics(cls):
+        logger.debug(f"_init_statics for {cls}")
+        if cls._rev_pi is None:
+            logger.debug(f"rev_pi is still None, creating new one")
+            cls._rev_pi = rp2.RevPiModIO(autorefresh=True, shared_procimg=True)
+            # cls._rev_pi.cycletime = 40  # the default 20 ms cannot be held
+            cls._rev_pi.mainloop(blocking=False)
 
-            _RevPiIoChannelBase._dio_modules = list(
-                filter(lambda d: isinstance(d, rp2_device.DioModule), _RevPiIoChannelBase._rev_pi.device)
+            product_type = (
+                (rp2.ProductType.DIO, rp2.ProductType.DI, rp2.ProductType.DO)
+                if cls in (RevPiDigitalInChannel, RevPiDigitalOutChannel)
+                else (rp2.ProductType.AIO, )
+                if cls in (RevPiAnalogInChannel, RevPiAnalogOutChannel)
+                else None
             )
-            for dev in _RevPiIoChannelBase._dio_modules:
-                exported_inputs = list(filter(lambda i: i.export, dev.get_inputs()))
-                _RevPiIoChannelBase._inputs = [input for input in exported_inputs]
-                exported_outputs = list(filter(lambda i: i.export, dev.get_outputs()))
-                _RevPiIoChannelBase._outputs = [output for output in exported_outputs]
+            logger.debug(f"product type {product_type}")
+            if product_type is None:
+                logger.error(
+                    f"{cls} is not one of the expected RevPi[Analog|Digital][In|Out]Channel, cannot determine product "
+                    "type of I/O module to look for"
+                )
 
-    def _exit(self):
-        self.__instances.remove(self)
-        if not self.__instances:
-            self._rev_pi.exit()
+            cls._io_modules = list(filter(lambda d: d.producttype in product_type, cls._rev_pi.device))
+            for dev in cls._io_modules:
+                exported_inputs = list(filter(lambda i: i.export, dev.get_inputs()))
+                cls._inputs = [input for input in exported_inputs]
+                exported_outputs = list(filter(lambda i: i.export, dev.get_outputs()))
+                cls._outputs = [output for output in exported_outputs]
+
+    @classmethod
+    def _exit(cls, self: Optional[Self] = None):
+        if self is not None:
+            cls.__instances.remove(self)
+            logger.debug(f"Removing {self} from {cls} instance list, remaining {cls.__instances}")
+        if not cls.__instances:
+            logger.debug("all instances destroyed -> exiting revpimodio main loop")
+            cls._rev_pi.exit()
 
     @staticmethod
     def _index_for_name(io_list: List[rp2_io.IOBase], io_name: str) -> int:
@@ -116,11 +139,16 @@ class RevPiDigitalInChannel(DigitalInChannelInterface, _RevPiIoChannelBase):
     @classmethod
     def number_of_channels(cls) -> int:
         cls._init_statics()
-        return len(cls._inputs)
+        num = len(cls._inputs)
+        cls._exit()
+        return num
 
     @classmethod
     def channel_at_index(cls, index: int) -> Self:
-        return cls(index)
+        cls._init_statics()
+        channel = cls(index)
+        cls._exit()
+        return channel
 
     def __update_channel(self, io_name: str, io_value: bool):
         """
@@ -133,7 +161,7 @@ class RevPiDigitalInChannel(DigitalInChannelInterface, _RevPiIoChannelBase):
         pass
 
     def stop(self):
-        self._exit()
+        self._exit(self)
 
 
 class RevPiDigitalOutChannel(DigitalOutChannelInterface, _RevPiIoChannelBase):
@@ -154,11 +182,16 @@ class RevPiDigitalOutChannel(DigitalOutChannelInterface, _RevPiIoChannelBase):
     @classmethod
     def number_of_channels(cls) -> int:
         cls._init_statics()
-        return len(cls._outputs)
+        num = len(cls._outputs)
+        cls._exit()
+        return num
 
     @classmethod
     def channel_at_index(cls, index: int) -> Self:
-        return cls(index)
+        cls._init_statics()
+        channel = cls(index)
+        cls._exit()
+        return channel
 
     def __update_channel(self, io_name: str, io_value: bool):
         """
@@ -176,7 +209,7 @@ class RevPiDigitalOutChannel(DigitalOutChannelInterface, _RevPiIoChannelBase):
         pass
 
     def stop(self):
-        self._exit()
+        self._exit(self)
 
 
 if __name__ == "__main__":
