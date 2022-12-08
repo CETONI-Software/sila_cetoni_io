@@ -212,6 +212,97 @@ class RevPiDigitalOutChannel(DigitalOutChannelInterface, _RevPiIoChannelBase):
         self._exit(self)
 
 
+class RevPiAnalogInChannel(AnalogInChannelInterface, _RevPiIoChannelBase):
+    """
+    Device driver implementation for Revolution Pi analog input channel modules
+    """
+
+    __input: rp2_io.IOBase
+
+    def __init__(self, index: int) -> None:
+        self.__input = self._inputs[index]
+
+        super().__init__(self.__input.name)
+
+        self._value = self.__input.value
+        self.__input.reg_event(self.__update_channel)
+
+    @classmethod
+    def number_of_channels(cls) -> int:
+        cls._init_statics()
+        num = len(cls._inputs)
+        cls._exit()
+        return num
+
+    @classmethod
+    def channel_at_index(cls, index: int) -> Self:
+        cls._init_statics()
+        channel = cls(index)
+        cls._exit()
+        return channel
+
+    def __update_channel(self, io_name: str, io_value: bool):
+        """
+        Callback function that is called by `revpimodio` every time the value of a channel changes
+        """
+        self._value = io_value
+
+    def start(self):
+        # This device does not need to be started
+        pass
+
+    def stop(self):
+        self._exit(self)
+
+
+class RevPiAnalogOutChannel(AnalogOutChannelInterface, _RevPiIoChannelBase):
+    """
+    Device driver implementation for Revolution Pi analog output channel modules
+    """
+
+    __output: rp2_io.IOBase
+
+    def __init__(self, index: int) -> None:
+        self.__output = self._outputs[index]
+
+        super().__init__(self.__output.name)
+
+        self._value = self.__output.value
+        self.__output.reg_event(self.__update_channel)
+
+    @classmethod
+    def number_of_channels(cls) -> int:
+        cls._init_statics()
+        num = len(cls._outputs)
+        cls._exit()
+        return num
+
+    @classmethod
+    def channel_at_index(cls, index: int) -> Self:
+        cls._init_statics()
+        channel = cls(index)
+        cls._exit()
+        return channel
+
+    def __update_channel(self, io_name: str, io_value: bool):
+        """
+        Callback function that is called by `revpimodio` every time the value of a channel changes
+        """
+        self._value = io_value
+
+    @AnalogOutChannelInterface.value.setter
+    def value(self, value: float):
+        self.__output.value = value
+        self._value = value
+
+    def start(self):
+        # This device does not need to be started
+        pass
+
+    def stop(self):
+        self._exit(self)
+
+
 if __name__ == "__main__":
     LOGGING_FORMAT = "%(asctime)s [%(threadName)-12.12s] %(levelname)-8s| %(name)s %(module)s.%(funcName)s: %(message)s"
     logging_level = logging.INFO
@@ -225,7 +316,17 @@ if __name__ == "__main__":
 
     input0 = RevPiDigitalInChannel(0)
     logging.info(f"Channel 0 state: {input0.state}")
-    input13 = RevPiDigitalInChannel.channel_at_index(13)
-    logging.info(f"Channel 13 state: {input13.state}")
+    input5 = RevPiDigitalInChannel.channel_at_index(5)
+    logging.info(f"Channel 5 state: {input5.state}")
     input0.stop()
-    input13.stop()
+    input5.stop()
+
+    logging.info(f"Num input channels: {RevPiAnalogInChannel.number_of_channels()}")
+    logging.info(f"Num output channels: {RevPiAnalogOutChannel.number_of_channels()}")
+
+    input0 = RevPiAnalogInChannel(0)
+    logging.info(f"Channel 0 value: {input0.value}")
+    input4 = RevPiAnalogInChannel.channel_at_index(4)
+    logging.info(f"Channel 4 value: {input4.value}")
+    input0.stop()
+    input4.stop()
