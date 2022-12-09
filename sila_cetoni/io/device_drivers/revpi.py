@@ -93,6 +93,7 @@ class _RevPiIoChannelBase:
         if not cls.__instances:
             logger.debug("all instances destroyed -> exiting revpimodio main loop")
             cls._rev_pi.exit()
+            cls._rev_pi = None
 
     @staticmethod
     def _index_for_name(io_list: List[rp2_io.IOBase], io_name: str) -> int:
