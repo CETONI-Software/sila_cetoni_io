@@ -8,7 +8,8 @@ A device driver implementation for the I/O channel modules of a Revolution Pi
 from __future__ import annotations
 
 import logging
-from typing import List, Optional
+import time
+from typing import Dict, List, Optional, Type
 
 import revpimodio2 as rp2
 from revpimodio2 import device as rp2_device
@@ -39,7 +40,7 @@ class _RevPiIoChannelBase:
     Base class for I/O channel device driver implementations for Revolution Pi modules
     """
 
-    __instances: List[Self] = []
+    __instances: Dict[Type[Self], List[Self]] = {}
 
     _rev_pi: rp2.RevPiModIO = None
     _io_modules: List[rp2_device.DioModule] = []
@@ -48,8 +49,10 @@ class _RevPiIoChannelBase:
 
     def __new__(cls, *args, **kwargs):
         instance = super().__new__(cls)
-        logger.debug(f"Adding {instance} to {cls} instance list")
-        cls.__instances += [instance]
+        if cls not in cls.__instances:
+            cls.__instances[cls] = []
+        cls.__instances[cls] += [instance]
+        logger.debug(f"Adding {instance} to {cls} instance list {cls.__instances}")
         return instance
 
     def __init__(self) -> None:
@@ -88,10 +91,14 @@ class _RevPiIoChannelBase:
     @classmethod
     def _exit(cls, self: Optional[Self] = None):
         if self is not None:
-            cls.__instances.remove(self)
+            cls.__instances[cls].remove(self)
             logger.debug(f"Removing {self} from {cls} instance list, remaining {cls.__instances}")
-        if not cls.__instances:
+        if cls not in cls.__instances or len(cls.__instances[cls]) == 0:
             logger.debug("all instances destroyed -> exiting revpimodio main loop")
+            # ensure the loop is actually running
+            while not cls._rev_pi._looprunning:
+                pass
+            time.sleep(0.1)
             cls._rev_pi.exit()
             cls._rev_pi = None
 
