@@ -67,7 +67,7 @@ class _RevPiIoChannelBase:
             product_type = (
                 (rp2.ProductType.DIO, rp2.ProductType.DI, rp2.ProductType.DO)
                 if cls in (RevPiDigitalInChannel, RevPiDigitalOutChannel)
-                else (rp2.ProductType.AIO, )
+                else (rp2.ProductType.AIO,)
                 if cls in (RevPiAnalogInChannel, RevPiAnalogOutChannel)
                 else None
             )
@@ -225,7 +225,7 @@ class RevPiAnalogInChannel(AnalogInChannelInterface, _RevPiIoChannelBase):
 
         super().__init__(self.__input.name)
 
-        self._value = self.__input.value
+        self._value: int = self.__input.value
         self.__input.reg_event(self.__update_channel)
 
     @classmethod
@@ -242,11 +242,15 @@ class RevPiAnalogInChannel(AnalogInChannelInterface, _RevPiIoChannelBase):
         cls._exit()
         return channel
 
-    def __update_channel(self, io_name: str, io_value: bool):
+    def __update_channel(self, io_name: str, io_value: int):
         """
         Callback function that is called by `revpimodio` every time the value of a channel changes
         """
         self._value = io_value
+
+    @AnalogInChannelInterface.value.getter
+    def value(self) -> int:
+        return super().value
 
     def start(self):
         # This device does not need to be started
@@ -268,7 +272,7 @@ class RevPiAnalogOutChannel(AnalogOutChannelInterface, _RevPiIoChannelBase):
 
         super().__init__(self.__output.name)
 
-        self._value = self.__output.value
+        self._value: int = self.__output.value
         self.__output.reg_event(self.__update_channel)
 
     @classmethod
@@ -285,16 +289,26 @@ class RevPiAnalogOutChannel(AnalogOutChannelInterface, _RevPiIoChannelBase):
         cls._exit()
         return channel
 
-    def __update_channel(self, io_name: str, io_value: bool):
+    def __update_channel(self, io_name: str, io_value: int):
         """
         Callback function that is called by `revpimodio` every time the value of a channel changes
         """
         self._value = io_value
 
-    @AnalogOutChannelInterface.value.setter
-    def value(self, value: float):
-        self.__output.value = value
-        self._value = value
+    @AnalogOutChannelInterface.value.getter
+    def value(self) -> int:
+        return super().value
+
+    @value.setter
+    def value(self, value: int):
+        int_value = int(value)
+        if int_value != value:
+            raise TypeError(
+                f"Invalid floating point value {value} when trying to set RevPi analog output channel. Only integer "
+                "values are allowed!"
+            )
+        self.__output.value = int_value
+        self._value = int_value
 
     def start(self):
         # This device does not need to be started
