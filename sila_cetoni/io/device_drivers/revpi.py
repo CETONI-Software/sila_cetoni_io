@@ -64,7 +64,7 @@ class _RevPiIoChannelBase:
         if cls._rev_pi is None:
             logger.debug(f"rev_pi is still None, creating new one")
             cls._rev_pi = rp2.RevPiModIO(autorefresh=True, shared_procimg=True)
-            # cls._rev_pi.cycletime = 40  # the default 20 ms cannot be held
+            cls._rev_pi.cycletime = 30  # the default 20 ms cannot always be held
             cls._rev_pi.mainloop(blocking=False)
 
             product_type = (
