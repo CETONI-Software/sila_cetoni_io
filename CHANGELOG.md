@@ -18,6 +18,10 @@ Types of changes
 
 ## Unreleased
 
+## v1.8.0
+
+Sync with sila_cetoni v1.8.0 release
+
 ### Added
 
 - Support for accessing the I/Os of Kunbus digital and analog I/O modules for the Revolution Pi
