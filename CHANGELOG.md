@@ -20,12 +20,12 @@ Types of changes
 
 ### Added
 
-- Support for accessing the I/Os of Kunbus digital I/O modules for the Revolution Pi
+- Support for accessing the I/Os of Kunbus digital and analog I/O modules for the Revolution Pi
 - Device driver classes for CETONI I/O channels
 
 ### Changed
 
-- Feature implementations use the more agnostic `IOChannelInterface` to support vendor independent I/O channels
+- Feature implementations use the more agnostic `IOChannelInterface` to support vendor-independent I/O channels
 - Bump required sila2 version to v0.10.1
 
 ## v1.7.1
