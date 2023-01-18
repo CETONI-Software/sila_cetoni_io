@@ -2,16 +2,15 @@
 from __future__ import annotations
 
 import math
-import time
 from concurrent.futures import Executor
 from queue import Queue
 from threading import Event
-from typing import Any, Dict, List, Optional, Union
+from typing import List, Optional, Union
 
 from sila2.framework import Command, Feature, FullyQualifiedIdentifier, Metadata, Property
 from sila2.server import MetadataDict, SilaServer
-from sila_cetoni.application.system import ApplicationSystem
 
+from sila_cetoni.application.system import ApplicationSystem, CetoniApplicationSystem
 from sila_cetoni.io.device_drivers import AnalogInChannelInterface
 
 from ..generated.analoginchannelprovider import (
@@ -21,6 +20,7 @@ from ..generated.analoginchannelprovider import (
 )
 
 
+@CetoniApplicationSystem.monitor_traffic
 class AnalogInChannelProviderImpl(AnalogInChannelProviderBase):
     __system: ApplicationSystem
     __channels: List[AnalogInChannelInterface]

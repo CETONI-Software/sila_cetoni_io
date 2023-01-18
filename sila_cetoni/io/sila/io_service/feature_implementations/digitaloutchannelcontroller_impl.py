@@ -2,16 +2,15 @@
 from __future__ import annotations
 
 import logging
-import time
 from concurrent.futures import Executor
 from queue import Queue
 from threading import Event
-from typing import Any, Dict, List, Optional, Union
+from typing import List, Optional, Union
 
 from sila2.framework import Command, Feature, FullyQualifiedIdentifier, Metadata, Property
 from sila2.server import MetadataDict, SilaServer
-from sila_cetoni.application.system import ApplicationSystem
 
+from sila_cetoni.application.system import ApplicationSystem, CetoniApplicationSystem
 from sila_cetoni.io.device_drivers import DigitalOutChannelInterface
 
 from ..generated.digitaloutchannelcontroller import (
@@ -25,6 +24,7 @@ from ..generated.digitaloutchannelcontroller import (
 logger = logging.getLogger(__name__)
 
 
+@CetoniApplicationSystem.monitor_traffic
 class DigitalOutChannelControllerImpl(DigitalOutChannelControllerBase):
     __system: ApplicationSystem
     __channels: List[DigitalOutChannelInterface]
