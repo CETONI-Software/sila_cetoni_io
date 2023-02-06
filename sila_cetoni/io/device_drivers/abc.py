@@ -33,7 +33,7 @@ class State(StrEnum):
 
 class IOChannelInterface(DeviceDriverABC):
     """
-    Interface for a digital I/O channel
+    Interface for an I/O channel
     """
 
     _name: str
