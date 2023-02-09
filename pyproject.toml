@@ -39,7 +39,7 @@ sila-cetoni = "sila_cetoni.io:main"
 package-dir = {"" = "."}
 
 [tool.setuptools.package-data]
-"*" = ["*.sila.xml"]
+"*" = ["*.sila.xml", "configuration_schema.json"]
 
 [build-system]
 requires = [

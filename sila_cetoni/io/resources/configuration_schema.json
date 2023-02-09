@@ -1,0 +1,31 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$ref": "#/definitions/IODevice",
+    "definitions": {
+        "IODevice": {
+            "type": "object",
+            "title": "A 3rd-party I/O device",
+            "allOf": [
+                {
+                    "$comment": "All possible 'manufacturer's for the 'type' 'io'",
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "io"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "manufacturer": {
+                                "enum": [
+                                    "Kunbus"
+                                ]
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    }
+}
