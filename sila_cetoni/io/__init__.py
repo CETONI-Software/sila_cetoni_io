@@ -79,7 +79,7 @@ class ThirdPartyIODevice(ThirdPartyDevice[__IODeviceDummy], IODevice):
 
         self._device = __IODeviceDummy(self)
 
-    def set_device_simulated_or_raise(self, err: Exception) -> None:
+    def set_device_simulated_or_raise(self, config: ApplicationConfiguration, err: Exception) -> None:
         # no simulated device driver support yet
         raise err
 
