@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, List, Optional, Union
 from uuid import UUID
 
 from sila_cetoni.core.sila.core_service.server import Server as CoreServer
-
 from sila_cetoni.io.device_drivers import (
     AnalogInChannelInterface,
     AnalogOutChannelInterface,
@@ -22,8 +21,6 @@ from .generated.analogoutchannelcontroller import AnalogOutChannelControllerFeat
 from .generated.digitalinchannelprovider import DigitalInChannelProviderFeature
 from .generated.digitaloutchannelcontroller import DigitalOutChannelControllerFeature
 
-__version__ = "1.8.0"
-
 
 class Server(CoreServer):
     def __init__(
@@ -36,6 +33,8 @@ class Server(CoreServer):
         server_vendor_url: str = "",
         server_uuid: Optional[Union[str, UUID]] = None,
     ):
+        from ... import __version__
+
         super().__init__(
             server_name=server_name or "I/O Service",
             server_type=server_type or "TestServer",
