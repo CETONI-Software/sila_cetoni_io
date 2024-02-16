@@ -18,6 +18,10 @@ Types of changes
 
 ## Unreleased
 
+## v1.9.0
+
+Sync with sila_cetoni v1.9.0 release
+
 ### Changed
 
 - All I/O features are now monitored for traffic by `CetoniApplicationSystem`
