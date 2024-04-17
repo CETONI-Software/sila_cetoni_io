@@ -3,9 +3,9 @@ from __future__ import annotations
 
 from functools import partial
 from queue import Queue
-from typing import List, Optional, Union
+from typing import List, Optional, Union, cast
 
-from sila2.framework import Command, Feature, FullyQualifiedIdentifier, Property
+from sila2.framework import Command, Feature, FullyQualifiedIdentifier, Metadata, Property
 from sila2.server import MetadataDict, SilaServer
 
 from sila_cetoni.application.system import ApplicationSystem, CetoniApplicationSystem
@@ -24,14 +24,14 @@ from ..generated.digitalinchannelprovider import (
 class DigitalInChannelProviderImpl(DigitalInChannelProviderBase):
     __system: ApplicationSystem
     __channels: List[DigitalInChannelInterface]
-    __channel_index_metadata: FullyQualifiedIdentifier
+    __channel_index_metadata: Metadata[int]
     __state_queues: List[Queue[State]]  # same number of items and order as `__channels`
 
     def __init__(self, server: SilaServer, channels: List[DigitalInChannelInterface]):
         super().__init__(server)
-        self.__system = ApplicationSystem()
+        self.__system = ApplicationSystem()  # type: ignore
         self.__channels = channels
-        self.__channel_index_metadata = DigitalInChannelProviderFeature["ChannelIndex"]
+        self.__channel_index_metadata = cast(Metadata[int], DigitalInChannelProviderFeature["ChannelIndex"])
 
         self.__state_queues = []
         for i in range(len(self.__channels)):
@@ -65,4 +65,4 @@ class DigitalInChannelProviderImpl(DigitalInChannelProviderBase):
     def get_calls_affected_by_ChannelIndex(
         self,
     ) -> List[Union[Feature, Command, Property, FullyQualifiedIdentifier]]:
-        return [DigitalInChannelProviderFeature["State"]]
+        return [cast(Property, DigitalInChannelProviderFeature["State"])]

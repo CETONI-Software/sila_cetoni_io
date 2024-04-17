@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from functools import partial
 from queue import Queue
-from typing import List, Optional, Union
+from typing import List, Optional, Union, cast
 
 from sila2.framework import Command, Feature, FullyQualifiedIdentifier, Metadata, Property
 from sila2.server import MetadataDict, SilaServer
@@ -30,7 +30,7 @@ class AnalogInChannelProviderImpl(AnalogInChannelProviderBase):
         super().__init__(server)
         self.__system = ApplicationSystem()  # type: ignore
         self.__channels = channels
-        self.__channel_index_metadata = AnalogInChannelProviderFeature["ChannelIndex"]
+        self.__channel_index_metadata = cast(Metadata[int], AnalogInChannelProviderFeature["ChannelIndex"])
 
         self.__value_queues = []
         for i in range(len(self.__channels)):
@@ -63,4 +63,4 @@ class AnalogInChannelProviderImpl(AnalogInChannelProviderBase):
     def get_calls_affected_by_ChannelIndex(
         self,
     ) -> List[Union[Feature, Command, Property, FullyQualifiedIdentifier]]:
-        return [AnalogInChannelProviderFeature["Value"]]
+        return [cast(Property, AnalogInChannelProviderFeature["Value"])]

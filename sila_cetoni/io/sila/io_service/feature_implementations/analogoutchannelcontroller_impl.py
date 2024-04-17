@@ -5,9 +5,9 @@ import logging
 from functools import partial
 from queue import Queue
 from threading import Event
-from typing import List, Optional, Union
+from typing import List, Optional, Union, cast
 
-from sila2.framework import Command, Feature, FullyQualifiedIdentifier, Property
+from sila2.framework import Command, Feature, FullyQualifiedIdentifier, Metadata, Property
 from sila2.server import MetadataDict, SilaServer
 
 from sila_cetoni.application.system import ApplicationSystem, CetoniApplicationSystem
@@ -28,14 +28,14 @@ logger = logging.getLogger(__name__)
 class AnalogOutChannelControllerImpl(AnalogOutChannelControllerBase):
     __system: ApplicationSystem
     __channels: List[AnalogOutChannelInterface]
-    __channel_index_metadata: FullyQualifiedIdentifier
+    __channel_index_metadata: Metadata[int]
     __value_queues: List[Queue[float]]  # same number of items and order as `__channels`
 
     def __init__(self, server: SilaServer, channels: List[AnalogOutChannelInterface]):
         super().__init__(server)
-        self.__system = ApplicationSystem()
+        self.__system = ApplicationSystem()  # type: ignore
         self.__channels = channels
-        self.__channel_index_metadata = AnalogOutChannelControllerFeature["ChannelIndex"]
+        self.__channel_index_metadata = cast(Metadata[int], AnalogOutChannelControllerFeature["ChannelIndex"])
         self.__stop_event = Event()
 
         self.__value_queues = []
@@ -71,6 +71,7 @@ class AnalogOutChannelControllerImpl(AnalogOutChannelControllerBase):
         logger.debug(f"channel index: {channel_index}")
         try:
             self.__channels[channel_index].value = Value
+            return SetOutputValue_Responses()
         except IndexError:
             raise InvalidChannelIndex(
                 message=f"The sent channel index {channel_index} is invalid. The index must be between 0 and {len(self.__channels) - 1}.",
@@ -80,6 +81,6 @@ class AnalogOutChannelControllerImpl(AnalogOutChannelControllerBase):
         self,
     ) -> List[Union[Feature, Command, Property, FullyQualifiedIdentifier]]:
         return [
-            AnalogOutChannelControllerFeature["Value"],
-            AnalogOutChannelControllerFeature["SetOutputValue"],
+            cast(Property, AnalogOutChannelControllerFeature["Value"]),
+            cast(Command, AnalogOutChannelControllerFeature["SetOutputValue"]),
         ]

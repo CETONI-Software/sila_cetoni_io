@@ -4,13 +4,14 @@ from __future__ import annotations
 import logging
 from functools import partial
 from queue import Queue
-from typing import List, Optional, Union
+from typing import List, Optional, Union, cast
 
 from sila2.framework import Command, Feature, FullyQualifiedIdentifier, Metadata, Property
 from sila2.server import MetadataDict, SilaServer
 
 from sila_cetoni.application.system import ApplicationSystem, CetoniApplicationSystem
 from sila_cetoni.io.device_drivers import DigitalOutChannelInterface
+from sila_cetoni.io.device_drivers import State as DigIOState
 from sila_cetoni.utils import PropertyUpdater, not_equal
 
 from ..generated.digitaloutchannelcontroller import (
@@ -18,8 +19,8 @@ from ..generated.digitaloutchannelcontroller import (
     DigitalOutChannelControllerFeature,
     InvalidChannelIndex,
     SetOutput_Responses,
-    State,
 )
+from ..generated.digitaloutchannelcontroller import State as DataTypeState
 
 logger = logging.getLogger(__name__)
 
@@ -28,14 +29,14 @@ logger = logging.getLogger(__name__)
 class DigitalOutChannelControllerImpl(DigitalOutChannelControllerBase):
     __system: ApplicationSystem
     __channels: List[DigitalOutChannelInterface]
-    __channel_index_metadata: Metadata
-    __state_queues: List[Queue[State]]  # same number of items and order as `__channels`
+    __channel_index_metadata: Metadata[int]
+    __state_queues: List[Queue[DataTypeState]]  # same number of items and order as `__channels`
 
     def __init__(self, server: SilaServer, channels: List[DigitalOutChannelInterface]):
         super().__init__(server)
-        self.__system = ApplicationSystem()
+        self.__system = ApplicationSystem()  # type: ignore
         self.__channels = channels
-        self.__channel_index_metadata = DigitalOutChannelControllerFeature["ChannelIndex"]
+        self.__channel_index_metadata = cast(Metadata[int], DigitalOutChannelControllerFeature["ChannelIndex"])
 
         self.__state_queues = []
         for i in range(len(self.__channels)):
@@ -54,7 +55,7 @@ class DigitalOutChannelControllerImpl(DigitalOutChannelControllerBase):
     def get_NumberOfChannels(self, *, metadata: MetadataDict) -> int:
         return len(self.__channels)
 
-    def State_on_subscription(self, *, metadata: MetadataDict) -> Optional[Queue[State]]:
+    def State_on_subscription(self, *, metadata: MetadataDict) -> Optional[Queue[DataTypeState]]:
         channel_index: int = metadata[self.__channel_index_metadata]
         try:
             if channel_index < 0:
@@ -65,11 +66,12 @@ class DigitalOutChannelControllerImpl(DigitalOutChannelControllerBase):
                 message=f"The sent channel index {channel_index} is invalid. The index must be between 0 and {len(self.__channels) - 1}.",
             )
 
-    def SetOutput(self, State: State, *, metadata: MetadataDict) -> SetOutput_Responses:
+    def SetOutput(self, State: DataTypeState, *, metadata: MetadataDict) -> SetOutput_Responses:
         channel_index: int = metadata[self.__channel_index_metadata]
         logger.debug(f"channel id: {channel_index}")
         try:
-            self.__channels[channel_index].state = State
+            self.__channels[channel_index].state = DigIOState(State)
+            return SetOutput_Responses()
         except IndexError:
             raise InvalidChannelIndex(
                 message=f"The sent channel index {channel_index} is invalid. The index must be between 0 and {len(self.__channels) - 1}.",
@@ -79,6 +81,6 @@ class DigitalOutChannelControllerImpl(DigitalOutChannelControllerBase):
         self,
     ) -> List[Union[Feature, Command, Property, FullyQualifiedIdentifier]]:
         return [
-            DigitalOutChannelControllerFeature["State"],
-            DigitalOutChannelControllerFeature["SetOutput"],
+            cast(Property, DigitalOutChannelControllerFeature["State"]),
+            cast(Command, DigitalOutChannelControllerFeature["SetOutput"]),
         ]

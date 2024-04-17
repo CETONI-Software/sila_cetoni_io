@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Optional, Union
+from typing import List, Optional, Union, cast
 from uuid import UUID
 
 from sila_cetoni.core.sila.core_service.server import Server as CoreServer
@@ -44,10 +44,22 @@ class Server(CoreServer):
             server_uuid=server_uuid,
         )
 
-        analog_in_channels = list(filter(lambda c: isinstance(c, AnalogInChannelInterface), io_channels))
-        analog_out_channels = list(filter(lambda c: isinstance(c, AnalogOutChannelInterface), io_channels))
-        digital_in_channels = list(filter(lambda c: isinstance(c, DigitalInChannelInterface), io_channels))
-        digital_out_channels = list(filter(lambda c: isinstance(c, DigitalOutChannelInterface), io_channels))
+        analog_in_channels = cast(
+            List[AnalogInChannelInterface],
+            list(filter(lambda c: isinstance(c, AnalogInChannelInterface), io_channels)),
+        )
+        analog_out_channels = cast(
+            List[AnalogOutChannelInterface],
+            list(filter(lambda c: isinstance(c, AnalogOutChannelInterface), io_channels)),
+        )
+        digital_in_channels = cast(
+            List[DigitalInChannelInterface],
+            list(filter(lambda c: isinstance(c, DigitalInChannelInterface), io_channels)),
+        )
+        digital_out_channels = cast(
+            List[DigitalOutChannelInterface],
+            list(filter(lambda c: isinstance(c, DigitalOutChannelInterface), io_channels)),
+        )
 
         if analog_in_channels:
             self.analoginchannelprovider = AnalogInChannelProviderImpl(self, analog_in_channels)
