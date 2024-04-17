@@ -2,8 +2,7 @@
 from __future__ import annotations
 
 import logging
-import math
-from concurrent.futures import Executor
+from functools import partial
 from queue import Queue
 from threading import Event
 from typing import List, Optional, Union
@@ -13,6 +12,7 @@ from sila2.server import MetadataDict, SilaServer
 
 from sila_cetoni.application.system import ApplicationSystem, CetoniApplicationSystem
 from sila_cetoni.io.device_drivers import AnalogOutChannelInterface
+from sila_cetoni.utils import PropertyUpdater, not_close
 
 from ..generated.analogoutchannelcontroller import (
     AnalogOutChannelControllerBase,
@@ -30,9 +30,8 @@ class AnalogOutChannelControllerImpl(AnalogOutChannelControllerBase):
     __channels: List[AnalogOutChannelInterface]
     __channel_index_metadata: FullyQualifiedIdentifier
     __value_queues: List[Queue[float]]  # same number of items and order as `__channels`
-    __stop_event: Event
 
-    def __init__(self, server: SilaServer, channels: List[AnalogOutChannelInterface], executor: Executor):
+    def __init__(self, server: SilaServer, channels: List[AnalogOutChannelInterface]):
         super().__init__(server)
         self.__system = ApplicationSystem()
         self.__channels = channels
@@ -41,24 +40,17 @@ class AnalogOutChannelControllerImpl(AnalogOutChannelControllerBase):
 
         self.__value_queues = []
         for i in range(len(self.__channels)):
-            self.__value_queues += [Queue()]
+            queue = Queue()
+            self.__value_queues += [queue]
 
-            # initial value
-            self.update_Value(self.__channels[i].value, queue=self.__value_queues[i])
-
-            executor.submit(self.__make_value_updater(i), self.__stop_event)
-
-    def __make_value_updater(self, i: int):
-        def update_value(stop_event: Event):
-            new_value = value = self.__channels[i].value
-            while not stop_event.wait(1):
-                if self.__system.state.is_operational():
-                    new_value = self.__channels[i].value
-                if not math.isclose(new_value, value):
-                    value = new_value
-                    self.update_Value(value, queue=self.__value_queues[i])
-
-        return update_value
+            self.run_periodically(
+                PropertyUpdater(
+                    lambda: self.__channels[i].value,
+                    not_close,
+                    partial(self.update_Value, queue=queue),
+                    when=self.__system.state.is_operational,
+                )
+            )
 
     def get_NumberOfChannels(self, *, metadata: MetadataDict) -> int:
         return len(self.__channels)
@@ -91,7 +83,3 @@ class AnalogOutChannelControllerImpl(AnalogOutChannelControllerBase):
             AnalogOutChannelControllerFeature["Value"],
             AnalogOutChannelControllerFeature["SetOutputValue"],
         ]
-
-    def stop(self) -> None:
-        super().stop()
-        self.__stop_event.set()

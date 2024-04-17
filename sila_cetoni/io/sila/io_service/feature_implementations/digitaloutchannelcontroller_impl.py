@@ -2,9 +2,8 @@
 from __future__ import annotations
 
 import logging
-from concurrent.futures import Executor
+from functools import partial
 from queue import Queue
-from threading import Event
 from typing import List, Optional, Union
 
 from sila2.framework import Command, Feature, FullyQualifiedIdentifier, Metadata, Property
@@ -12,6 +11,7 @@ from sila2.server import MetadataDict, SilaServer
 
 from sila_cetoni.application.system import ApplicationSystem, CetoniApplicationSystem
 from sila_cetoni.io.device_drivers import DigitalOutChannelInterface
+from sila_cetoni.utils import PropertyUpdater, not_equal
 
 from ..generated.digitaloutchannelcontroller import (
     DigitalOutChannelControllerBase,
@@ -30,35 +30,26 @@ class DigitalOutChannelControllerImpl(DigitalOutChannelControllerBase):
     __channels: List[DigitalOutChannelInterface]
     __channel_index_metadata: Metadata
     __state_queues: List[Queue[State]]  # same number of items and order as `__channels`
-    __stop_event: Event
 
-    def __init__(self, server: SilaServer, channels: List[DigitalOutChannelInterface], executor: Executor):
+    def __init__(self, server: SilaServer, channels: List[DigitalOutChannelInterface]):
         super().__init__(server)
         self.__system = ApplicationSystem()
         self.__channels = channels
         self.__channel_index_metadata = DigitalOutChannelControllerFeature["ChannelIndex"]
-        self.__stop_event = Event()
 
         self.__state_queues = []
         for i in range(len(self.__channels)):
-            self.__state_queues += [Queue()]
+            queue = Queue()
+            self.__state_queues += [queue]
 
-            # initial value
-            self.update_State(self.__channels[i].state, queue=self.__state_queues[i])
-
-            executor.submit(self.__make_state_updater(i), self.__stop_event)
-
-    def __make_state_updater(self, i: int):
-        def update_state(stop_event: Event):
-            new_state = state = self.__channels[i].state
-            while not stop_event.wait(0.1):
-                if self.__system.state.is_operational():
-                    new_state = self.__channels[i].state
-                if new_state != state:
-                    state = new_state
-                    self.update_State(state, queue=self.__state_queues[i])
-
-        return update_state
+            self.run_periodically(
+                PropertyUpdater(
+                    lambda: self.__channels[i].state,
+                    not_equal,
+                    partial(self.update_State, queue=queue),
+                    when=self.__system.state.is_operational,
+                ),
+            )
 
     def get_NumberOfChannels(self, *, metadata: MetadataDict) -> int:
         return len(self.__channels)
@@ -91,7 +82,3 @@ class DigitalOutChannelControllerImpl(DigitalOutChannelControllerBase):
             DigitalOutChannelControllerFeature["State"],
             DigitalOutChannelControllerFeature["SetOutput"],
         ]
-
-    def stop(self) -> None:
-        super().stop()
-        self.__stop_event.set()

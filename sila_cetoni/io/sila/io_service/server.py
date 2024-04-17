@@ -50,22 +50,14 @@ class Server(CoreServer):
         digital_out_channels = list(filter(lambda c: isinstance(c, DigitalOutChannelInterface), io_channels))
 
         if analog_in_channels:
-            self.analoginchannelprovider = AnalogInChannelProviderImpl(
-                self, analog_in_channels, self.child_task_executor
-            )
+            self.analoginchannelprovider = AnalogInChannelProviderImpl(self, analog_in_channels)
             self.set_feature_implementation(AnalogInChannelProviderFeature, self.analoginchannelprovider)
         if analog_out_channels:
-            self.analogoutchannelcontroller = AnalogOutChannelControllerImpl(
-                self, analog_out_channels, self.child_task_executor
-            )
+            self.analogoutchannelcontroller = AnalogOutChannelControllerImpl(self, analog_out_channels)
             self.set_feature_implementation(AnalogOutChannelControllerFeature, self.analogoutchannelcontroller)
         if digital_in_channels:
-            self.digitalinchannelprovider = DigitalInChannelProviderImpl(
-                self, digital_in_channels, self.child_task_executor
-            )
+            self.digitalinchannelprovider = DigitalInChannelProviderImpl(self, digital_in_channels)
             self.set_feature_implementation(DigitalInChannelProviderFeature, self.digitalinchannelprovider)
         if digital_out_channels:
-            self.digitaloutchannelcontroller = DigitalOutChannelControllerImpl(
-                self, digital_out_channels, self.child_task_executor
-            )
+            self.digitaloutchannelcontroller = DigitalOutChannelControllerImpl(self, digital_out_channels)
             self.set_feature_implementation(DigitalOutChannelControllerFeature, self.digitaloutchannelcontroller)
